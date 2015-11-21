@@ -132,7 +132,7 @@ def buildComposite(cls, slots=True):
     return str(c)
 
 def recopyArgsWithoutSelf(argspec, buffer):
-    first = True 
+    first = True
     for arg in argspec.args:
         if arg == "self":
             continue
@@ -143,10 +143,16 @@ def recopyArgsWithoutSelf(argspec, buffer):
         buffer.append(arg)
     varargs = argspec.varargs
     if varargs is not None:
-        buffer.append(", *").append(varargs)
+        if first:
+            first = False
+        else:
+            buffer.append(", ")
+        buffer.append("*").append(varargs)
     keywords = argspec.keywords
     if keywords is not None:
-        buffer.append(", **").append(keywords)
+        if not first:
+            buffer.append(", ")
+        buffer.append("**").append(keywords)
 
 class Observable:
     def __init__(self):
@@ -208,7 +214,7 @@ class PrintableMethod:
             for decorator in self.decorators:
                 buffer.append("\t@").append(decorator).append("\n")
         buffer.append("\tdef ").append(self.name).append("(")
-        first = True 
+        first = True
         args = self.argspec.args
         defaults = self.argspec.defaults
         lenArgs = len(args)
@@ -227,10 +233,16 @@ class PrintableMethod:
                 buffer.append("=").append(defaults[index - indexStartDefaults])
         varargs = self.argspec.varargs
         if varargs is not None:
-            buffer.append(", *").append(varargs)
+            if first:
+                first = False
+            else:
+                buffer.append(", ")
+            buffer.append("*").append(varargs)
         keywords = self.argspec.keywords
         if keywords is not None:
-            buffer.append(", **").append(keywords)
+            if not first:
+                buffer.append(", ")
+            buffer.append("**").append(keywords)
         buffer.append("):\n")
         for instruction in self.instructions:
             buffer.append("\t\t").append(instruction).append("\n")

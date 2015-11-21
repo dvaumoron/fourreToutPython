@@ -43,7 +43,7 @@ if __name__ == '__main__':
     print(coef(5, 5))
     print(coef)
     print(coef.cache)
-    
+
     class TestClass:
         __slots__ = "__d"
         def __init__(self):
@@ -59,11 +59,11 @@ if __name__ == '__main__':
         def d(self, d):
             print("d setter of TestClass")
             self.__d = d
-    
+
     decoratorStr = codi.buildDecorator(TestClass)
     print(decoratorStr)
     exec(decoratorStr)
-    
+
     class TestClassDecoratorImpl(TestClassDecorator):
         def __init__(self, inner):
             super().__init__(inner)
@@ -72,11 +72,11 @@ if __name__ == '__main__':
             self.count += 1
             print("__call__ of TestClassDecoratorImpl", self.count)
             return super().__call__(a, b, *varargs, **keywords)
-    
+
     compositeStr = codi.buildComposite(TestClass)
     print(compositeStr)
     exec(compositeStr)
-    
+
     tc = TestClass()
     print(tc)
     d = TestClassDecoratorImpl(tc)
@@ -93,32 +93,32 @@ if __name__ == '__main__':
     c.d = []
     print(c.d)
     print(tc.d)
-    
+
     @codi.Singleton
     class TestSingleton:
         def __init__(self, name):
             self.name = name
         def __str__(self):
             return self.name
-    
+
     a = TestSingleton('a')
     b = TestSingleton('b')
-    
+
     print(a)
     print(b)
     print(TestSingleton.instance)
     print(a == b)
     print(TestSingleton)
-    
+
     class TestObservable(codi.Observable):
         pass
-    
+
     class TestObservator:
         def __init__(self, name):
             self.name = name
         def notify(self, observable):
             print(self.name, "notified with", observable)
-    
+
     observable = TestObservable()
     observator1 = TestObservator("observator1")
     observator2 = TestObservator("observator2")
@@ -128,11 +128,11 @@ if __name__ == '__main__':
     observable.notify()
     observable.unregisterObservator(observator2)
     observable.notify()
-    
+
     @codi.curry
     def myPrint(a, b, c, d, e):
         print(a, b, c, d, e)
-    
+
     print(myPrint)
     myPrint(1, 2, 3, 5, 7)
     myPrint(1)(2)(3)(5)(7)
