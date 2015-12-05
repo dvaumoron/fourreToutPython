@@ -50,7 +50,7 @@ def memoize(function):
 def buildDecorator(cls, slots=False):
     c = PrintableClass(cls.__name__ + "Decorator")
     if slots:
-        c.addSlots(['inner'])
+        c.addSlots("'inner'")
     m = PrintableMethod("__init__", inspect.ArgSpec(["self", "inner"], None, None, None))
     m.addInstruction("self.inner = inner")
     c.addMethod(m)
@@ -89,9 +89,9 @@ def buildDecorator(cls, slots=False):
 def buildComposite(cls, slots=True):
     c = PrintableClass(cls.__name__ + "Composite")
     if slots:
-        c.addSlots(['inners'])
-    m = PrintableMethod("__init__", inspect.ArgSpec(["self", "inners"], None, None, None))
-    m.addInstruction("self.inners = inners")
+        c.addSlots("'inners'")
+    m = PrintableMethod("__init__", inspect.ArgSpec(["self"], None, None, None))
+    m.addInstruction("self.inners = []")
     c.addMethod(m)
     m = PrintableMethod("addInner", inspect.ArgSpec(["self", "inner"], None, None, None))
     m.addInstruction("self.inners.append(inner)")
@@ -132,7 +132,7 @@ def buildComposite(cls, slots=True):
     return str(c)
 
 def recopyArgsWithoutSelf(argspec, buffer):
-    first = True 
+    first = True
     for arg in argspec.args:
         if arg == "self":
             continue
@@ -143,10 +143,16 @@ def recopyArgsWithoutSelf(argspec, buffer):
         buffer.append(arg)
     varargs = argspec.varargs
     if varargs is not None:
-        buffer.append(", *").append(varargs)
+        if first:
+            first = False
+        else:
+            buffer.append(", ")
+        buffer.append("*").append(varargs)
     keywords = argspec.keywords
     if keywords is not None:
-        buffer.append(", **").append(keywords)
+        if not first:
+            buffer.append(", ")
+        buffer.append("**").append(keywords)
 
 class Observable:
     def __init__(self):
@@ -173,17 +179,23 @@ class StringBuffer:
         return ''.join(self.buffer)
 
 class PrintableClass:
-    __slots__ = ("name", "methods", "slots")
+    __slots__ = ("decorators", "name", "methods", "slots")
     def __init__(self, name):
+        self.decorators = []
         self.name = name
-        self.methods = []
         self.slots = None
-    def addMethod(self, method):
-        self.methods.append(method)
+        self.methods = []
+    def addDecorator(self, decorator):
+        self.decorators.append(decorator)
     def addSlots(self, slots):
         self.slots = slots
+    def addMethod(self, method):
+        self.methods.append(method)
     def __str__(self):
         buffer = StringBuffer()
+        if self.decorators:
+            for decorator in self.decorators:
+                buffer.append("@").append(decorator).append("\n")
         buffer.append("class ").append(self.name).append(":\n")
         if self.slots is not None:
             buffer.append("\t__slots__ = ").append(self.slots).append("\n")
@@ -208,7 +220,7 @@ class PrintableMethod:
             for decorator in self.decorators:
                 buffer.append("\t@").append(decorator).append("\n")
         buffer.append("\tdef ").append(self.name).append("(")
-        first = True 
+        first = True
         args = self.argspec.args
         defaults = self.argspec.defaults
         lenArgs = len(args)
@@ -227,10 +239,16 @@ class PrintableMethod:
                 buffer.append("=").append(defaults[index - indexStartDefaults])
         varargs = self.argspec.varargs
         if varargs is not None:
-            buffer.append(", *").append(varargs)
+            if first:
+                first = False
+            else:
+                buffer.append(", ")
+            buffer.append("*").append(varargs)
         keywords = self.argspec.keywords
         if keywords is not None:
-            buffer.append(", **").append(keywords)
+            if not first:
+                buffer.append(", ")
+            buffer.append("**").append(keywords)
         buffer.append("):\n")
         for instruction in self.instructions:
             buffer.append("\t\t").append(instruction).append("\n")
@@ -240,7 +258,6 @@ class CurriedFunction:
     def __init__(self, minargs, function, args, kwargs):
         self.minargs = minargs
         self.function = function
-        functools.update_wrapper(self, function)
         self.args = args
         self.kwargs = kwargs
     def __call__(self, *args, **kwargs):
