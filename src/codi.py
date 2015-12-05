@@ -191,7 +191,7 @@ class PrintableClass:
         self.slots = slots
     def addMethod(self, method):
         self.methods.append(method)
-    def __str__(self):
+    def toStringBuffer(self):
         buffer = StringBuffer()
         if self.decorators:
             for decorator in self.decorators:
@@ -200,8 +200,10 @@ class PrintableClass:
         if self.slots is not None:
             buffer.append("\t__slots__ = ").append(self.slots).append("\n")
         for method in self.methods:
-            buffer.append(method)
-        return str(buffer)
+            buffer.append(method.toStringBuffer())
+        return buffer
+    def __str__(self):
+        return str(self.toStringBuffer())
 
 class PrintableMethod:
     __slots__ = ("decorators", "name", "argspec", "instructions")
@@ -214,7 +216,7 @@ class PrintableMethod:
         self.decorators.append(decorator)
     def addInstruction(self, instruction):
         self.instructions.append(instruction)
-    def __str__(self):
+    def toStringBuffer(self):
         buffer = StringBuffer()
         if self.decorators:
             for decorator in self.decorators:
@@ -252,7 +254,9 @@ class PrintableMethod:
         buffer.append("):\n")
         for instruction in self.instructions:
             buffer.append("\t\t").append(instruction).append("\n")
-        return str(buffer)
+        return buffer
+    def __str__(self):
+        return str(self.toStringBuffer())
 
 class CurriedFunction:
     def __init__(self, minargs, function, args, kwargs):
