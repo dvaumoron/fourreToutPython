@@ -157,3 +157,9 @@ if __name__ == '__main__':
     tc2b.setB('tata')
     tc2 = tc2b.build()
     print(tc2)
+
+    pc = codi.PrintableClass("Toto")
+    pc.addParentClass("Titi")
+    pc.addDecorator("Tata")
+    pc.addParentClass("Tyty")
+    print(pc)
