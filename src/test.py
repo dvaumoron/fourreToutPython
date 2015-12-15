@@ -140,3 +140,12 @@ if __name__ == '__main__':
     print(myPrint1)
     myPrint1(2, 3)(5, 7)
     myPrint1(c=3, b=2)(e=7, d=5)
+
+    class TestClass2:
+        def __init__(self, a, b='toto'):
+            self.a = a
+            self.b = b
+
+    builderStr = codi.buildBuilder(TestClass2)
+    print(builderStr)
+    exec(builderStr)

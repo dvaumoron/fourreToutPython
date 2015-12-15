@@ -131,6 +131,52 @@ def buildComposite(cls, slots=True):
             c.addMethod(m)
     return str(c)
 
+def buildBuilder(cls):
+    init = getattr(cls, "__init__")
+    argspec = inspect.getargspec(init)
+    defaults = argspec.defaults
+    argsWithoutSelf = argspec.args[1:]
+    lenArgs = len(argsWithoutSelf)
+    if defaults is None:
+        lenDefaults = 0
+    else:
+        lenDefaults = len(defaults)
+    indexStartDefaults = lenArgs - lenDefaults
+    c = PrintableClass(cls.__name__ + "Builder")
+    c.addSlots(argsWithoutSelf)
+    m = PrintableMethod("__init__", inspect.ArgSpec(["self"], None, None, None))
+    for index, arg in enumerate(argsWithoutSelf):
+        default = None
+        if index >= indexStartDefaults:
+            default = defaults[index - indexStartDefaults]
+        instruction = StringBuffer()
+        instruction.append("self.").append(arg).append(" = ").append(repr(default))
+        m.addInstruction(instruction)
+    c.addMethod(m)
+    for arg in argsWithoutSelf:
+        name = StringBuffer()
+        name.append("set").append(arg.capitalize())
+        m = PrintableMethod(name, inspect.ArgSpec(["self", arg], None, None, None))
+        instruction = StringBuffer()
+        instruction.append("self.").append(arg).append(" = ").append(arg)
+        m.addInstruction(instruction)
+        m.addInstruction("return self")
+        c.addMethod(m)
+    m = PrintableMethod("build", inspect.ArgSpec(["self"], None, None, None))
+    instruction = StringBuffer()
+    instruction.append("return ").append(cls.__name__).append("(")
+    first = True
+    for arg in argsWithoutSelf:
+        if first:
+            first = False
+        else:
+            instruction.append(", ")
+        instruction.append("self.").append(arg)
+    instruction.append(")")
+    m.addInstruction(instruction)
+    c.addMethod(m)
+    return str(c)
+
 def recopyArgsWithoutSelf(argspec, buffer):
     first = True
     for arg in argspec.args:
