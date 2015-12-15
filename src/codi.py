@@ -239,14 +239,17 @@ class StringBuffer:
         return ''.join(self.buffer)
 
 class PrintableClass:
-    __slots__ = ("decorators", "name", "slots", "methods")
+    __slots__ = ("decorators", "name", "parentClasses", "slots", "methods")
     def __init__(self, name):
         self.decorators = []
         self.name = name
+        self.parentClasses = []
         self.slots = None
         self.methods = []
     def addDecorator(self, decorator):
         self.decorators.append(decorator)
+    def addParentClass(self, parentClass):
+        self.parentClasses.append(parentClass)
     def addSlots(self, slots):
         self.slots = slots
     def addMethod(self, method):
@@ -256,7 +259,18 @@ class PrintableClass:
         if self.decorators:
             for decorator in self.decorators:
                 buffer.append("@").append(decorator).append("\n")
-        buffer.append("class ").append(self.name).append(":\n")
+        buffer.append("class ").append(self.name)
+        if self.parentClasses:
+            buffer.append("(")
+            first = True
+            for parentClass in self.parentClasses:
+                if first:
+                    first = False
+                else:
+                    buffer.append(", ")
+                buffer.append(parentClass)
+            buffer.append(")")
+        buffer.append(":\n")
         if self.slots is not None:
             buffer.append("\t__slots__ = ").append(self.slots).append("\n")
         for method in self.methods:
