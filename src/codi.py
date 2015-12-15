@@ -48,7 +48,9 @@ def memoize(function):
     return memoizeWith({})(function)
 
 def buildDecorator(cls, slots=False):
-    c = PrintableClass(cls.__name__ + "Decorator")
+    name = StringBuffer()
+    name.append(cls.__name__).append("Decorator")
+    c = PrintableClass(name)
     if slots:
         c.addSlots("'inner'")
     m = PrintableMethod("__init__", inspect.ArgSpec(["self", "inner"], None, None, None))
@@ -73,13 +75,17 @@ def buildDecorator(cls, slots=False):
             m.addInstruction(instruction)
             c.addMethod(m)
             m = PrintableMethod(name, inspect.ArgSpec(["self", name], None, None, None))
-            m.addDecorator(name + ".setter")
+            decorator = StringBuffer()
+            decorator.append(name).append(".setter")
+            m.addDecorator(decorator)
             instruction = StringBuffer()
             instruction.append("self.inner.").append(name).append(" = ").append(name)
             m.addInstruction(instruction)
             c.addMethod(m)
             m = PrintableMethod(name, inspect.ArgSpec(["self"], None, None, None))
-            m.addDecorator(name + ".deleter")
+            decorator = StringBuffer()
+            decorator.append(name).append(".deleter")
+            m.addDecorator(decorator)
             instruction = StringBuffer()
             instruction.append("del self.inner.").append(name)
             m.addInstruction(instruction)
@@ -87,7 +93,9 @@ def buildDecorator(cls, slots=False):
     return str(c)
 
 def buildComposite(cls, slots=True):
-    c = PrintableClass(cls.__name__ + "Composite")
+    name = StringBuffer()
+    name.append(cls.__name__).append("Composite")
+    c = PrintableClass(name)
     if slots:
         c.addSlots("'inners'")
     m = PrintableMethod("__init__", inspect.ArgSpec(["self"], None, None, None))
@@ -116,14 +124,18 @@ def buildComposite(cls, slots=True):
             m.addInstruction(instruction)
             c.addMethod(m)
             m = PrintableMethod(name, inspect.ArgSpec(["self", name], None, None, None))
-            m.addDecorator(name + ".setter")
+            decorator = StringBuffer()
+            decorator.append(name).append(".setter")
+            m.addDecorator(decorator)
             m.addInstruction("for inner in self.inners:")
             instruction = StringBuffer()
             instruction.append("\tinner.").append(name).append(" = ").append(name)
             m.addInstruction(instruction)
             c.addMethod(m)
             m = PrintableMethod(name, inspect.ArgSpec(["self"], None, None, None))
-            m.addDecorator(name + ".deleter")
+            decorator = StringBuffer()
+            decorator.append(name).append(".deleter")
+            m.addDecorator(decorator)
             m.addInstruction("for inner in self.inners:")
             instruction = StringBuffer()
             instruction.append("\tdel inner.").append(name)
@@ -142,7 +154,9 @@ def buildBuilder(cls):
     else:
         lenDefaults = len(defaults)
     indexStartDefaults = lenArgs - lenDefaults
-    c = PrintableClass(cls.__name__ + "Builder")
+    name = StringBuffer()
+    name.append(cls.__name__).append("Builder")
+    c = PrintableClass(name)
     c.addSlots(argsWithoutSelf)
     m = PrintableMethod("__init__", inspect.ArgSpec(["self"], None, None, None))
     for index, arg in enumerate(argsWithoutSelf):
@@ -225,7 +239,7 @@ class StringBuffer:
         return ''.join(self.buffer)
 
 class PrintableClass:
-    __slots__ = ("decorators", "name", "methods", "slots")
+    __slots__ = ("decorators", "name", "slots", "methods")
     def __init__(self, name):
         self.decorators = []
         self.name = name

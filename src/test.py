@@ -145,7 +145,15 @@ if __name__ == '__main__':
         def __init__(self, a, b='toto'):
             self.a = a
             self.b = b
+        def __repr__(self):
+            return ''.join(['TestClass2(', repr(self.a), ', ', repr(self.b), ')'])
 
     builderStr = codi.buildBuilder(TestClass2)
     print(builderStr)
     exec(builderStr)
+
+    tc2b = TestClass2Builder()
+    tc2b.setA('titi')
+    tc2b.setB('tata')
+    tc2 = tc2b.build()
+    print(tc2)
