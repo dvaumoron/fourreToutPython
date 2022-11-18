@@ -1,0 +1,16 @@
+<html>
+	<head>
+		<title>Index</title>
+	</head>
+	<body>
+		<h1>Index</h1>
+		<ul>
+<%
+for el in link:
+	print("<li><a href=\"", el[1], "\">", el[0], "</a></li>", sep="")
+%>
+		</ul>
+
+		<a href="/">retour</a>
+	</body>	
+</html>

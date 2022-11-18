@@ -1,0 +1,25 @@
+<html>
+	<head>
+		<title>Modifier l'index</title>
+	</head>
+	<body>
+		<h1>Modifier l'index</h1>
+		<ul>
+<%
+lenLinkM1 = len(link) - 1
+for i, el in enumerate(link):
+	print("<li>", el[0], "&nbsp;", sep="")
+	print("<a href=\"/cgi-bin/displayIndexItem.py?index=", i, "\">Modifier</a>&nbsp;", sep="")
+	print("<a href=\"/cgi-bin/eraseIndexItem.py?index=", i, "\">Effacer</a>&nbsp;", sep="")
+	if i != 0:
+		print("<a href=\"/cgi-bin/moveIndexItem.py?index=", i, "\">Monter</a>&nbsp;", sep="")
+	if i != lenLinkM1:
+		print("<a href=\"/cgi-bin/moveIndexItem.py?index=", i, "&up=true\">Baisser</a>", sep="")
+	print("</li>&nbsp;")
+%>
+<li><a href="/cgi-bin/displayIndexItem.py?index=new">Ajouter un &eacute;l&eacute;ment</a></li>
+		</ul>
+
+		<a href="/">retour</a>
+	</body>	
+</html>

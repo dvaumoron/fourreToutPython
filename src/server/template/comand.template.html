@@ -1,0 +1,20 @@
+<html>
+	<head>
+		<title>Liste de serveurs</title>
+	</head>
+	<body>
+		<h1>Liste de serveurs</h1>
+		<ul>
+<%
+for i, el in enumerate(slave):
+	print("<li>", el[0], "&nbsp;:&nbsp;", res[i], "&nbsp;", sep="")
+	print("<a href=\"/cgi-bin/remoteCmd.py?index=", i, "&action=start\">Start</a>&nbsp;", sep="")
+	print("<a href=\"/cgi-bin/remoteCmd.py?index=", i, "&action=cancel\">Cancel</a>&nbsp;", sep="")
+	print("</li>")
+%>
+		</ul>
+
+		<a href="/cgi-bin/remoteCmd.py">actualiser</a>&nbsp;
+		<a href="/">retour</a>
+	</body>	
+</html>

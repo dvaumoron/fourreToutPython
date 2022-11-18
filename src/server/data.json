@@ -1,0 +1,42 @@
+{
+	"link": [
+		[
+			"Hello",
+			"/helloForm.html"
+		],
+		[
+			"Hello Denis",
+			"/cgi-bin/hello.py?name=Denis"
+		],
+		[
+			"IMC",
+			"/IMCForm.html"
+		],
+		[
+			"mon IMC",
+			"/cgi-bin/imc.py?poids=74&taille=1.71"
+		],
+		[
+			"Liste",
+			"/cgi-bin/list.py?l=a&l=b&l=c&l=d&l=e"
+		],
+		[
+			"Liste de serveurs",
+			"/cgi-bin/remoteCmd.py"
+		],
+		[
+			"Test",
+			"/cgi-bin/test.py?var=abcdef"
+		]
+	],
+	"slave": [
+		[
+			"Int&eacutegration",
+			"http://localhost:8000"
+		],
+		[
+			"Production",
+			"http://localhost:8001"
+		]
+	]
+}

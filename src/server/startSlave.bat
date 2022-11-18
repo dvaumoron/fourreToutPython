@@ -1,0 +1,1 @@
+py ../pythonWorkspace/slave.py

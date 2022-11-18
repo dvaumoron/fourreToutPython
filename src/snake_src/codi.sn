@@ -1,0 +1,349 @@
+
+(importpy functools)
+
+(def memoize args (bloc
+	(:= func ([] args 0))
+	(:= cache (? (> (len args) 1)
+		([] args 1)
+		(dict)
+	))
+	(def (. functools wraps func) res_func args
+		(if (contains cache args)
+			([] cache args)
+			(bloc
+				(:= res (call func args))
+				([]= cache args res)
+				res
+			)
+		)
+	)
+	(setattr res_func cache cache)
+	res_func
+))
+
+(def print_call args (bloc
+	(:= func ([] args 0))
+	(:= printer (? (> (len args) 1)
+		([] args 1)
+		print
+	))
+	(def (. functools wraps func) res_func args (bloc
+		(printer (concat (getattr res_func __name__) "(" (. "," join (map str args)) ")"))
+		(call func args)
+	))
+	res_func
+))
+
+(class CacheInit () (bloc
+	(:= __slots__ (tuple_lit "cache"))
+	(def __init__ (self) (bloc
+		(setattr self cache (dict))
+		None
+	))
+	(def __call__ args
+		(CacheSetter
+			(getattr ([] args 0) cache)
+			([] args (slice 1 (len args)))
+		)
+	)
+))
+
+(class CacheSetter () (bloc
+	(:= __slots__ (tuple_lit "cache" "key"))
+	(def __init__ (self cache key) (bloc
+		(setattr self cache cache)
+		(setattr self key key)
+		None
+	))
+	(def set (self value) (bloc
+		([]= (getattr self cache) (getattr self key) value)
+		None
+	))
+))
+
+(def static_class (c) (bloc
+	(for (kv (. (getattr c __dict__) items)) (bloc
+		(setm (k v) kv)
+		(if (callable v)
+			(setattr c (unquote k) (staticmethod v))
+			None
+		)
+	))
+	c
+))
+
+(def_macro def_accept (node)
+	(quote (def accept (self visitor)
+		(. visitor
+			(unquote (NodeIdentifier (concat "visit_" (getattr node identifier))))
+			self
+		)
+	))
+)
+
+(def_macro def_delegate (node_inner node_method node_int) (bloc
+	(:= param_list (quote (self)))
+	(:= body (quote (. (getattr self (unquote node_inner)) (unquote node_method))))
+	(for (i (range 0 (getattr node_int value))) (bloc
+		(:= id (NodeIdentifier (concat "v" i)))
+		(. param_list append id)
+		(. body append id)
+	))
+	(node_list_lit (quote def) node_method param_list body)
+))
+
+(def_macro def_delegate_m (node_inner node_method node_ints) (bloc
+	(:= case_body (quote (case)))
+	(for (node_int node_ints) (bloc
+		(:= i (+ (getattr node_int value) 1))
+		(. case_body append (quote (== size (unquote (NodeValue i)))))
+		(:= body (quote (. inner (unquote node_method))))
+		(for (j (range 1 i))
+			(. body append (quote
+				([] args (unquote (NodeValue j)))
+			))
+		)
+		(. case_body append body)
+	))
+	(. case_body append (quote True))
+	(. case_body append (quote (raise (Exception "nombre d'argument incorrect"))))
+	(quote (def (unquote node_method) args (bloc
+		(:= size (len args))
+		(:= inner (getattr ([] args 0) (unquote node_inner)))
+		(unquote case_body)
+	)))
+))
+
+(def_macro def_delegate_v (node_inner node_method)
+	(quote (def (unquote node_method) args (bloc
+		(:= inner (getattr ([] args 0) (unquote node_inner)))
+		(:= new_args ([] args (slice 1 (len args))))
+		(call (getattr inner (unquote node_method)) new_args)
+	)))
+)
+
+(def_macro def_square_matrix (node_size) (bloc
+	(:= size (getattr node_size value))
+	(:= name (concat "SquareMatrix" size))
+	(:= node_name (NodeIdentifier name))
+	(:= line_name (NodeIdentifier (concat "MatrixLine" size)))
+
+	(:= str_body (quote (concat "[[")))
+	(:= id_list (quote (list_lit)))
+	(:= generate_list (quote (list_lit)))
+	(:= add_list (quote (list_lit)))
+	(:= sub_list (quote (list_lit)))
+	(:= mul_list (quote (list_lit)))
+	(:= matmul_list (quote (list_lit)))
+
+	(:= f_call (quote (f)))
+
+	(for (i (range size)) (bloc
+		(if (== i 0)
+			None
+			(. str_body append (quote "],\n ["))
+		)
+		(:= offset (* i size))
+		(:= matmul_sublist (quote (+)))
+		(for (j (range size)) (bloc
+			(:= indice (NodeValue (+ j offset)))
+			(if (== j 0)
+				None
+				(. str_body append (quote ", "))
+			)
+			(. str_body append (quote ([] self_inner (unquote indice))))
+			(. id_list append (NodeValue (? (== i j) 1 0)))
+			(. generate_list append f_call)
+			(. add_list append (quote (+ ([] self_inner (unquote indice)) ([] other_inner (unquote indice)))))
+			(. sub_list append (quote (- ([] self_inner (unquote indice)) ([] other_inner (unquote indice)))))
+			(. mul_list append (quote (* other ([] self_inner (unquote indice)))))
+			(. matmul_sublist append (quote (* ([] self_inner (unquote indice)) ([] other (unquote (NodeValue j))))))
+		))
+		(. matmul_list append matmul_sublist)
+	))
+
+	(. str_body append (quote "]]"))
+
+	(quote (bloc
+		(class (unquote line_name) () (bloc
+			(:= __slots__ (tuple_lit "inner" "offset"))
+			(def __init__ (self inner line) (bloc
+				(setattr self inner inner)
+				(setattr self offset (* line (unquote node_size)))
+				None
+			))
+			(def __getitem__ (self column)
+				([] (getattr self inner) (+ column (getattr self offset)))
+			)
+			(def __setitem__ (self column value) (bloc
+				([]= (getattr self inner) (+ column (getattr self offset)) value)
+				None
+			))
+		))
+		(class (unquote node_name) () (bloc
+			(:= __slots__ (tuple_lit "inner"))
+			(def __init__ (self inner) (bloc
+				(setattr self inner inner)
+				None
+			))
+			(def __getitem__ (self line)
+				((unquote line_name) (getattr self inner) line)
+			)
+			(def __repr__ (self)
+				(. (unquote (NodeValue (concat name "({})"))) format (getattr self inner))
+			)
+			(def __str__ (self) (bloc
+				(:= self_inner (getattr self inner))
+				(unquote str_body)
+			))
+			(def classmethod identity (klass)
+				(klass (unquote id_list))
+			)
+			(def classmethod generate (klass f)
+				(klass (unquote generate_list))
+			)
+			(def __add__ (self other)
+				(if (isinstance other (unquote node_name))
+					(bloc
+						(:= self_inner (getattr self inner))
+						(:= other_inner (getattr other inner))
+						((type self) (unquote add_list))
+					)
+					NotImplemented
+				)
+			)
+			(def __sub__ (self other)
+				(if (isinstance other (unquote node_name))
+					(bloc
+						(:= self_inner (getattr self inner))
+						(:= other_inner (getattr other inner))
+						((type self) (unquote sub_list))
+					)
+					NotImplemented
+				)
+			)
+			(def __mul__ (self other) (bloc
+				(:= self_inner (getattr self inner))
+				((type self) (unquote mul_list))
+			))
+			(:= __rmul__ __mul__)
+			(def __matmul__ (self other) (bloc
+				(:= self_inner (getattr self inner))
+				(unquote matmul_list)
+			))
+		))
+	))
+))
+
+(def_macro def_sigmoid (node_size) (bloc
+	(:= size (getattr node_size value))
+	(:= sig_list (quote (list_lit)))
+
+	(for (i (range size))
+		(. sig_list append (quote (/ 1 (+ 1 (exp (neg ([] column (unquote (NodeValue i)))))))))
+	)
+
+	(quote (def (unquote (NodeIdentifier (concat "sigmoid" size))) (column)
+		(unquote sig_list)
+	))
+))
+
+(def_macro def_perceptron (node_depth) (bloc
+	(:= depth (getattr node_depth value))
+	(:= call_body (quote (bloc
+		(:= self_inner (getattr self inner))
+		(:= sigmoid (getattr self sigmoid))
+	)))
+
+	(for (i (range depth)) (bloc
+		(. call_body append (quote (:= column (@ ([] self_inner (unquote (NodeValue i))) column))))
+		(. call_body append (quote (:= column (sigmoid column))))
+	))
+
+	(. call_body append (quote column))
+
+	(quote (class (unquote (NodeIdentifier (concat "Perceptron" depth))) () (bloc
+		(:= __slots__ (tuple_lit "inner" "sigmoid"))
+		(def __init__ (self sigmoid) (bloc
+			(setattr self inner (list))
+			(setattr self sigmoid sigmoid)
+			None
+		))
+		(def __call__ (self column)
+			(unquote call_body)
+		)
+	)))
+))
+
+(def_macro dataclass args (bloc
+	(:= name ([] args 0))
+	(:= params ([] args (slice 1 (len args))))
+	(:= slots_value (quote (tuple_lit)))
+	(:= init_args (quote (self)))
+	(:= init_body (quote (bloc)))
+	(:= to_tuple_body (quote (tuple_lit)))
+	(:= to_dict_body (quote (dict_lit)))
+	(:= repr_body (quote (concat)))
+	(:= first True)
+
+	(for (param params) (bloc
+		(:= param_name (getattr param identifier))
+		(:= param_value (NodeValue param_name))
+		(. slots_value append param_value)
+		(. init_args append param)
+		(. init_body append (quote
+			(setattr self (unquote param) (unquote param))
+		))
+		(:= get_param (quote
+			(getattr self (unquote param))
+		))
+		(. to_tuple_body append get_param)
+		(. to_dict_body append (quote
+			((unquote param_value) (unquote get_param))
+		))
+		(if first
+			(bloc
+				(:= first False)
+				(. repr_body append 
+					(NodeValue (concat (getattr name identifier) "(" param_name "="))
+				)
+			)
+			(. repr_body append 
+				(NodeValue (concat ","  param_name "="))
+			)
+		)
+		(. repr_body append get_param)
+	))
+
+	(. init_body append (quote None))
+	(. repr_body append (quote ")"))
+
+	(quote (class (unquote name) () (bloc
+		(:= __slots__ (unquote slots_value))
+		(def __init__ (unquote init_args)
+			(unquote init_body)
+		)
+		(def to_tuple (self)
+			(unquote to_tuple_body)
+		)
+		(def to_dict (self)
+			(unquote to_dict_body)
+		)
+		(def __eq__ (self other)
+			(case
+				(is self other) True
+				(isinstance other (unquote name)) (== (. self to_tuple) (. other to_tuple))
+				True NotImplemented
+			)
+		)
+		(def __lt__ (self other)
+			(if (isinstance other (unquote name))
+				(< (. self to_tuple) (. other to_tuple))
+				NotImplemented
+			)
+		)
+		(def __repr__ (self)
+			(unquote repr_body)
+		)
+	)))
+))
